@@ -1,0 +1,77 @@
+[
+  {
+    "id": "ORD-1790908521023",
+    "number": "003",
+    "customerName": "xd",
+    "customerAddress": "xd",
+    "customerPhone": "",
+    "deliveryType": "Delivery",
+    "paymentMethod": "Efectivo",
+    "items": [
+      {
+        "id": "1790908512427-0y82zoffajlo",
+        "name": "Clásica Criolla con Huevo",
+        "unitPrice": 9,
+        "qty": 1,
+        "cookingPoint": "Jugosa",
+        "extras": [
+          "Huevo frito"
+        ],
+        "notes": ""
+      }
+    ],
+    "total": 9,
+    "status": "NUEVO",
+    "timestamp": "2026-10-02T02:35:21.023Z",
+    "createdAtFormatted": "11:35 p. m."
+  },
+  {
+    "id": "ORD-1790908502544",
+    "number": "002",
+    "customerName": "Prueba desde el Celular",
+    "customerAddress": "Mesa 4 / Calle Falsa 123",
+    "customerPhone": "",
+    "deliveryType": "Delivery",
+    "paymentMethod": "Efectivo",
+    "items": [
+      {
+        "name": "Doble Bacon & Queso Fundido",
+        "qty": 2,
+        "unitPrice": 8.5,
+        "cookingPoint": "Jugosa",
+        "extras": [
+          "Queso Cheddar Extra"
+        ]
+      },
+      {
+        "name": "Papas Rústicas con Cheddar",
+        "qty": 1,
+        "unitPrice": 4.8
+      }
+    ],
+    "total": 21.8,
+    "status": "ENTREGADO",
+    "timestamp": "2026-10-02T02:35:02.544Z",
+    "createdAtFormatted": "11:35 p. m."
+  },
+  {
+    "id": "ORD-1790908333266",
+    "number": "001",
+    "customerName": "Matias",
+    "customerAddress": "Retiro en Local",
+    "customerPhone": "",
+    "deliveryType": "Delivery",
+    "paymentMethod": "Efectivo",
+    "items": [
+      {
+        "name": "Hamburguesa",
+        "qty": 1,
+        "unitPrice": 8
+      }
+    ],
+    "total": 8,
+    "status": "ENTREGADO",
+    "timestamp": "2026-10-02T02:32:13.268Z",
+    "createdAtFormatted": "11:32 p. m."
+  }
+]

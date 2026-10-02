@@ -1,0 +1,21 @@
+{
+  "name": "la-brasa-restaurant",
+  "version": "1.0.0",
+  "description": "Carta de comida rápida y comandera de cocina en tiempo real",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "restaurant",
+    "fast-food",
+    "delivery",
+    "pos",
+    "kitchen-display"
+  ],
+  "author": "Jesus",
+  "license": "MIT"
+}

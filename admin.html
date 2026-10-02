@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#181715">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Comandera Móvil | La Brasa</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- Barra Superior del Celular -->
+  <header class="app-header">
+    <div class="app-brand">
+      <span class="app-icon">🔥</span>
+      <div>
+        <h1 class="app-title">LA BRASA</h1>
+        <span class="app-role">Comandera de Cocina & Pedidos</span>
+      </div>
+    </div>
+
+    <div class="app-status-pill online" id="connectionStatus">
+      <span class="status-dot"></span>
+      <span id="connectionText">En línea</span>
+    </div>
+  </header>
+
+  <!-- Banner de Sonido de Notificación -->
+  <div class="audio-banner" id="audioBanner">
+    <div class="audio-banner-text">
+      <span>🔔 <strong>Alarma de Pedidos Activa</strong></span>
+      <small>Suena una campana cada vez que entra una orden.</small>
+    </div>
+    <button class="btn-test-sound" id="testSoundBtn" type="button">Probar Timbre 🔔</button>
+  </div>
+
+  <!-- Pestañas de Estado (Fácil de pulsar con el pulgar) -->
+  <nav class="status-tabs">
+    <button class="tab-btn active" data-tab="NUEVO">
+      <span class="tab-badge" id="badgeNuevos">0</span>
+      <span>Nuevos</span>
+    </button>
+    <button class="tab-btn" data-tab="PREPARANDO">
+      <span class="tab-badge" id="badgeCocina">0</span>
+      <span>En Cocina</span>
+    </button>
+    <button class="tab-btn" data-tab="LISTO">
+      <span class="tab-badge" id="badgeListo">0</span>
+      <span>Reparto</span>
+    </button>
+    <button class="tab-btn" data-tab="ENTREGADO">
+      <span class="tab-badge" id="badgeEntregados">0</span>
+      <span>Entregados</span>
+    </button>
+  </nav>
+
+  <!-- Botón de Simulación de Prueba Rápida -->
+  <div class="test-order-bar">
+    <button class="btn-sim-order" id="simOrderBtn" type="button">
+      ⚡ Enviar Pedido de Prueba (Para probar timbre en el celular)
+    </button>
+  </div>
+
+  <!-- Lista de Comandas / Pedidos -->
+  <main class="orders-feed" id="ordersList">
+    <!-- Se inyecta por Javascript -->
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
