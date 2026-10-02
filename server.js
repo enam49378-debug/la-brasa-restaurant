@@ -78,8 +78,11 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/stream' && req.method === 'GET') {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-transform',
       'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control, Content-Type',
+      'X-Accel-Buffering': 'no',
     });
 
     res.write(`data: ${JSON.stringify({ type: 'CONNECTED', message: 'Conectado a La Brasa' })}\n\n`);
@@ -88,7 +91,17 @@ const server = http.createServer((req, res) => {
     const newClient = { id: clientId, res };
     sseClients.push(newClient);
 
+    // Heartbeat cada 15 segundos para evitar que Render o proxies cierren la conexión
+    const pingInterval = setInterval(() => {
+      try {
+        res.write(': ping\n\n');
+      } catch (e) {
+        clearInterval(pingInterval);
+      }
+    }, 15000);
+
     req.on('close', () => {
+      clearInterval(pingInterval);
       sseClients = sseClients.filter(c => c.id !== clientId);
     });
     return;

@@ -106,14 +106,23 @@ function startRealtimeConnection() {
   };
 }
 
+function formatMoney(val) {
+  if (typeof val !== 'number' || isNaN(val)) return '$0';
+  return '$' + Math.round(val).toLocaleString('es-CL');
+}
+
 // Cargar pedidos existentes al abrir
 async function loadInitialOrders() {
+  const statusPill = document.getElementById('connectionStatus');
+  const statusText = document.getElementById('connectionText');
   try {
     const res = await fetch('/api/orders');
     if (res.ok) {
       allOrders = await res.json();
       renderOrders();
       updateBadges();
+      statusPill.className = 'app-status-pill online';
+      statusText.textContent = 'En línea';
     }
   } catch (e) {
     console.error('Error al cargar pedidos iniciales:', e);
@@ -170,7 +179,7 @@ function renderOrders() {
                     ${item.notes ? ` • <em>"${item.notes}"</em>` : ''}
                   </div>
                 </div>
-                <div class="order-item-price">$${(item.unitPrice * item.qty).toFixed(2)}</div>
+                <div class="order-item-price">${formatMoney(item.unitPrice * item.qty)}</div>
               </div>
             `).join('')}
           </div>
@@ -178,7 +187,7 @@ function renderOrders() {
           <!-- Total a cobrar -->
           <div class="order-total-bar">
             <span>Total a Cobrar:</span>
-            <span class="order-total-amount">$${order.total.toFixed(2)}</span>
+            <span class="order-total-amount">${formatMoney(order.total)}</span>
           </div>
 
           <!-- Botones de Acción de Cocina -->

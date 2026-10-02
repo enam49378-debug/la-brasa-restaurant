@@ -62,7 +62,7 @@
   </main>
 
   <section class="closing-note"><span aria-hidden="true">✳</span><div><h2>La felicidad también viene en un plato.</h2><p>Gracias por elegir la cocina de barrio.</p></div><span aria-hidden="true">✳</span></section>
-  <footer class="rustic-footer"><div class="footer-inner"><div><strong>la brasa<span>.</span></strong><p>Comida honesta para días felices.</p></div><div><b>Tu pedido</b><p>Elegí tus favoritos en la carta y consultanos por WhatsApp.</p></div></div><div class="footer-bottom">Hecho con cariño <span>✳</span> La Brasa</div></footer>
+  <footer class="rustic-footer"><div class="footer-inner"><div><strong>la brasa<span>.</span></strong><p>Comida honesta para días felices.</p></div><div><b>Tu pedido</b><p>Elegí tus favoritos en la carta y enviá tu pedido a cocina directamente.</p></div></div><div class="footer-bottom">Hecho con cariño <span>✳</span> La Brasa</div></footer>
 
   <div class="backdrop-overlay" id="overlay"></div>
   <div class="simple-modal" id="productModal" role="dialog" aria-modal="true" aria-labelledby="modalName" style="display:none">
@@ -89,6 +89,24 @@
     </div>
   </div>
 
+  <!-- Modal de Pedido Confirmado -->
+  <div class="simple-modal" id="orderSuccessModal" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-box text-center" style="text-align:center; padding: 28px 22px; max-width: 440px;">
+      <div style="font-size: 3.2rem; margin-bottom: 6px;">🎉</div>
+      <span class="eyebrow" style="color:var(--rust); font-weight:700;">¡PEDIDO RECIBIDO!</span>
+      <h3 id="successOrderNum" style="font-family:var(--serif); font-size:1.7rem; margin: 8px 0 10px; color:var(--ink);">Pedido #001</h3>
+      <p style="color:var(--muted); line-height: 1.5; margin-bottom: 16px; font-size: 0.95rem;" id="successOrderMsg">
+        Tu pedido ha ingresado directamente a la comanda de la cocina de <strong>La Brasa</strong>.<br>
+        ¡Ya están preparando tu comida con todo el sabor de barrio!
+      </p>
+      <div id="successOrderDetails" style="background:#f4ebe1; border: 1px solid #ebd9c8; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 0.9rem; text-align: left; max-height: 180px; overflow-y: auto;">
+      </div>
+      <button class="btn-submit-order" id="closeSuccessBtn" type="button" style="justify-content:center; padding:13px; font-size:14px;">
+        <span>¡Genial, gracias!</span>
+      </button>
+    </div>
+  </div>
+
   <aside class="simple-cart" id="cartDrawer" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-hidden="true">
     <div class="cart-head"><div><span class="eyebrow">YA CASI ESTÁ</span><h3 id="cartTitle">Tu pedido <span>♡</span></h3></div><button class="cart-close" id="closeCartBtn" type="button" aria-label="Cerrar pedido">×</button></div>
     <div class="cart-items" id="cartItemsList"></div>
@@ -102,7 +120,7 @@
         <label class="sr-only" for="custAddress">Dirección de entrega</label><input id="custAddress" type="text" placeholder="Dirección de entrega *" class="simple-input" autocomplete="street-address">
         <label class="sr-only" for="custPay">Forma de pago</label><select id="custPay" class="simple-input"><option value="Efectivo">Pago en efectivo</option><option value="Transferencia">Transferencia</option><option value="Tarjeta">Tarjeta débito / crédito</option></select>
       </div>
-      <button class="btn-whatsapp" id="sendWhatsappBtn" type="button">Consultar pedido por WhatsApp <span aria-hidden="true">↗</span></button>
+      <button class="btn-submit-order" id="sendOrderBtn" type="button"><span>Confirmar y Enviar Pedido</span> <span class="arrow" aria-hidden="true">➔</span></button>
     </div>
   </aside>
   <div class="mobile-order-bar" id="mobileBar"><button class="btn-mobile-order" id="mobileCartBtn" type="button"><span>Ver mi pedido (<span id="mobileCount">0</span>)</span><span id="mobileTotal">Por confirmar</span></button></div>

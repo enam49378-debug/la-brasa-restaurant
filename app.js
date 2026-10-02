@@ -299,34 +299,115 @@ function closeCart() {
   document.body.style.overflow = "";
 }
 
-function sendOrderToWhatsApp() {
-  if (!State.cart.length) return;
-  if (!WHATSAPP_PHONE) {
-    alert("Falta configurar el número de WhatsApp del local.");
+function sendOrderToKitchen() {
+  if (!State.cart.length) {
+    alert("Tu bolsita está vacía. Elegí algo rico de la carta para empezar.");
     return;
   }
   const name = byId("custName").value.trim();
   const address = byId("custAddress").value.trim();
   const delivery = document.querySelector('input[name="delivery_type"]:checked').value;
-  if (!name) { alert("Escribí tu nombre."); byId("custName").focus(); return; }
-  if (delivery === "Delivery" && !address) { alert("Escribí tu dirección."); byId("custAddress").focus(); return; }
-  const lines = [
-    "*CONSULTA DE PEDIDO · LA BRASA*",
-    "Cliente: " + name,
-    "Entrega: " + (delivery === "Delivery" ? "A domicilio" : "Retiro en el local"),
-    ...(delivery === "Delivery" ? ["Dirección: " + address] : []),
-    "Pago: " + byId("custPay").value,
-    "",
-    "*PRODUCTOS:*"
-  ];
-  State.cart.forEach(item => {
-    lines.push("• " + item.qty + " × " + item.name + (item.variant ? " — " + item.variant : ""));
-    if (item.notes) lines.push("  Nota: " + item.notes);
-  });
-  const total = cartTotal();
-  lines.push("", total === null ? "Precios por confirmar" : "*TOTAL: " + money(total) + "*");
-  lines.push("¿Me confirman precios y demora? ¡Gracias!");
-  window.open("https://wa.me/" + WHATSAPP_PHONE + "?text=" + encodeURIComponent(lines.join("\n")), "_blank", "noopener");
+  const payMethod = byId("custPay").value;
+
+  if (!name) {
+    alert("Por favor escribí tu nombre para identificar tu pedido.");
+    byId("custName").focus();
+    return;
+  }
+  if (delivery === "Delivery" && !address) {
+    alert("Por favor escribí la dirección donde entregaremos tu pedido.");
+    byId("custAddress").focus();
+    return;
+  }
+
+  const btn = byId("sendOrderBtn") || byId("sendWhatsappBtn");
+  const originalHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>Enviando pedido a cocina...</span> <span class="arrow">⏳</span>';
+  }
+
+  const orderPayload = {
+    customerName: name,
+    customerAddress: delivery === "Delivery" ? address : "Retiro en el local",
+    deliveryType: delivery,
+    paymentMethod: payMethod,
+    items: State.cart.map(item => ({
+      name: item.name + (item.variant ? " (" + item.variant + ")" : ""),
+      qty: item.qty,
+      unitPrice: typeof item.unitPrice === "number" ? item.unitPrice : 0,
+      notes: item.notes || ""
+    })),
+    total: cartTotal() || 0
+  };
+
+  fetch("/api/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(orderPayload)
+  })
+    .then(async res => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(data => {
+      const order = data.order || { number: "001", total: orderPayload.total };
+      State.cart = [];
+      updateCartUI();
+      closeCart();
+      byId("custName").value = "";
+      byId("custAddress").value = "";
+      showOrderSuccess(order, orderPayload);
+    })
+    .catch(err => {
+      console.error("Error al enviar pedido:", err);
+      alert("Hubo un inconveniente al enviar tu pedido. Por favor intenta nuevamente.");
+    })
+    .finally(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml || '<span>Confirmar y Enviar Pedido</span> <span class="arrow" aria-hidden="true">➔</span>';
+      }
+    });
+}
+
+function showOrderSuccess(order, payload) {
+  const modal = byId("orderSuccessModal");
+  if (!modal) {
+    alert("¡Pedido #" + (order.number || "001") + " recibido con éxito en cocina!");
+    return;
+  }
+
+  byId("successOrderNum").textContent = "Pedido #" + (order.number || "001");
+
+  const itemsHtml = payload.items.map(it => 
+    '<div style="display:flex; justify-content:space-between; margin-bottom:4px;">' +
+      '<span>' + it.qty + 'x ' + escapeHtml(it.name) + '</span>' +
+      '<strong>' + (it.unitPrice > 0 ? money(it.unitPrice * it.qty) : '') + '</strong>' +
+    '</div>' + (it.notes ? '<div style="font-size:0.8rem; color:#786958; margin-bottom:4px;">Nota: ' + escapeHtml(it.notes) + '</div>' : '')
+  ).join("");
+
+  byId("successOrderDetails").innerHTML =
+    '<div style="margin-bottom:8px; border-bottom:1px solid #ebd9c8; padding-bottom:6px;">' +
+      '<div><strong>Cliente:</strong> ' + escapeHtml(payload.customerName) + '</div>' +
+      '<div><strong>Entrega:</strong> ' + (payload.deliveryType === 'Delivery' ? '🛵 ' + escapeHtml(payload.customerAddress) : '🥡 Retiro en el local') + '</div>' +
+      '<div><strong>Pago:</strong> ' + escapeHtml(payload.paymentMethod) + '</div>' +
+    '</div>' +
+    '<div style="margin-bottom:8px;">' + itemsHtml + '</div>' +
+    '<div style="border-top:1px solid #ebd9c8; padding-top:6px; display:flex; justify-content:space-between; font-weight:700; color:var(--rust-dark); font-size:1.05rem;">' +
+      '<span>Total a pagar:</span><span>' + money(payload.total) + '</span>' +
+    '</div>';
+
+  modal.style.display = "flex";
+  byId("overlay").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function closeSuccessModal() {
+  const modal = byId("orderSuccessModal");
+  if (modal) modal.style.display = "none";
+  byId("overlay").classList.remove("active");
+  document.body.style.overflow = "";
 }
 
 function syncDelivery() {
@@ -355,10 +436,18 @@ function setupEvents() {
   byId("mobileCartBtn").addEventListener("click", openCart);
   byId("closeCartBtn").addEventListener("click", closeCart);
   byId("closeModalBtn").addEventListener("click", closeModal);
-  byId("overlay").addEventListener("click", () => { closeModal(); closeCart(); });
+  const closeSuccessBtn = byId("closeSuccessBtn");
+  if (closeSuccessBtn) closeSuccessBtn.addEventListener("click", closeSuccessModal);
+  byId("overlay").addEventListener("click", () => { closeModal(); closeCart(); closeSuccessModal(); });
   byId("productModal").addEventListener("click", event => {
     if (event.target.id === "productModal") closeModal();
   });
+  const orderSuccessModal = byId("orderSuccessModal");
+  if (orderSuccessModal) {
+    orderSuccessModal.addEventListener("click", event => {
+      if (event.target.id === "orderSuccessModal") closeSuccessModal();
+    });
+  }
   byId("modalQtyMinus").addEventListener("click", () => {
     if (State.quantity > 1) { State.quantity--; byId("modalQtyNum").textContent = State.quantity; updateModalTotal(); }
   });
@@ -372,10 +461,14 @@ function setupEvents() {
     if (button) changeQty(button.dataset.cartId, Number(button.dataset.delta));
   });
   document.querySelectorAll('input[name="delivery_type"]').forEach(radio => radio.addEventListener("change", syncDelivery));
-  byId("sendWhatsappBtn").addEventListener("click", sendOrderToWhatsApp);
+
+  const orderBtn = byId("sendOrderBtn") || byId("sendWhatsappBtn");
+  if (orderBtn) orderBtn.addEventListener("click", sendOrderToKitchen);
+
   document.addEventListener("keydown", event => {
     if (event.key !== "Escape") return;
     if (byId("productModal").style.display !== "none") closeModal();
+    else if (orderSuccessModal && orderSuccessModal.style.display !== "none") closeSuccessModal();
     else if (byId("cartDrawer").classList.contains("active")) closeCart();
   });
 }
@@ -386,8 +479,4 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEvents();
   updateCartUI();
   syncDelivery();
-  if (!WHATSAPP_PHONE) {
-    byId("sendWhatsappBtn").disabled = true;
-    byId("sendWhatsappBtn").textContent = "WhatsApp pendiente de configurar";
-  }
 });
