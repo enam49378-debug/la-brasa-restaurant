@@ -1,17 +1,30 @@
 /**
  * ==========================================================================
- * COMANDERA MÓVIL - LA BRASA
- * Lógica en tiempo real, alarmas con sonido y gestión de cocina
+ * COMANDERA DE COCINA - COMIDA RÁPIDA STEFY (CANELA BAJA)
+ * Diseñada para ser ultra simple, rápida y fácil de ver en el celular.
  * ==========================================================================
  */
 
 let allOrders = [];
 let currentFilter = 'NUEVO';
 let audioCtx = null;
+let eventSource = null;
+
+function cleanPhone(phone) {
+  if (!phone) return '';
+  let p = phone.replace(/\D/g, '');
+  if (p.length === 9) p = '56' + p;
+  return p;
+}
+
+function formatMoney(val) {
+  if (typeof val !== 'number' || isNaN(val)) return '$0';
+  return '$' + Math.round(val).toLocaleString('es-CL');
+}
 
 // ==========================================================================
 // SINTETIZADOR DE TIMBRE DE COCINA (Web Audio API)
-// No necesita archivos MP3 externos, suena fuerte y claro en cualquier celular.
+// Suena como campana de cocina de restaurante "Ding - Dong"
 // ==========================================================================
 function initAudio() {
   if (!audioCtx) {
@@ -30,10 +43,8 @@ function playKitchenChime() {
   if (!audioCtx) return;
 
   const now = audioCtx.currentTime;
-
-  // Secuencia de dos campanas "Ding - Dong" de restaurante
   const notes = [
-    { freq: 880, start: 0, dur: 0.8 },    // La5
+    { freq: 880, start: 0, dur: 0.8 },       // La5
     { freq: 1174.66, start: 0.18, dur: 1.2 } // Re6
   ];
 
@@ -44,7 +55,6 @@ function playKitchenChime() {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, now + start);
 
-    // Envolvente de volumen de campana metálica
     gain.gain.setValueAtTime(0.001, now + start);
     gain.gain.exponentialRampToValueAtTime(0.4, now + start + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
@@ -56,7 +66,6 @@ function playKitchenChime() {
     osc.stop(now + start + dur);
   });
 
-  // Si el celular soporta vibración, vibrar 2 veces
   if ('vibrate' in navigator) {
     navigator.vibrate([200, 100, 300]);
   }
@@ -69,46 +78,60 @@ function startRealtimeConnection() {
   const statusPill = document.getElementById('connectionStatus');
   const statusText = document.getElementById('connectionText');
 
-  const eventSource = new EventSource('/api/stream');
+  if (eventSource) {
+    eventSource.close();
+  }
 
-  eventSource.onopen = () => {
-    statusPill.className = 'app-status-pill online';
-    statusText.textContent = 'En línea';
-  };
+  statusText.textContent = 'Conectando...';
 
-  eventSource.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
+  // Cargar pedidos inmediatamente
+  loadInitialOrders();
 
-      if (data.type === 'NEW_ORDER') {
-        allOrders.unshift(data.order);
-        playKitchenChime();
-        renderOrders();
-        updateBadges();
-      }
+  try {
+    eventSource = new EventSource('/api/stream');
 
-      if (data.type === 'STATUS_CHANGE') {
-        const order = allOrders.find(o => o.id === data.orderId);
-        if (order) {
-          order.status = data.status;
+    eventSource.onopen = () => {
+      statusPill.className = 'app-status-pill online';
+      statusText.textContent = 'En línea';
+    };
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'NEW_ORDER') {
+          allOrders.unshift(data.order);
+          playKitchenChime();
           renderOrders();
           updateBadges();
         }
+
+        if (data.type === 'STATUS_CHANGE') {
+          const order = allOrders.find(o => o.id === data.orderId);
+          if (order) {
+            order.status = data.status;
+            renderOrders();
+            updateBadges();
+          }
+        }
+      } catch (e) {
+        console.error('Error al procesar evento SSE:', e);
       }
-    } catch (e) {
-      console.error('Error al procesar evento SSE:', e);
-    }
-  };
+    };
 
-  eventSource.onerror = () => {
+    eventSource.onerror = () => {
+      if (eventSource.readyState === EventSource.CONNECTING) {
+        statusPill.className = 'app-status-pill offline';
+        statusText.textContent = 'Reconectando...';
+      } else {
+        statusPill.className = 'app-status-pill offline';
+        statusText.textContent = 'Desconectado';
+      }
+    };
+  } catch (err) {
     statusPill.className = 'app-status-pill offline';
-    statusText.textContent = 'Reconectando...';
-  };
-}
-
-function formatMoney(val) {
-  if (typeof val !== 'number' || isNaN(val)) return '$0';
-  return '$' + Math.round(val).toLocaleString('es-CL');
+    statusText.textContent = 'Error Conexión';
+  }
 }
 
 // Cargar pedidos existentes al abrir
@@ -130,7 +153,7 @@ async function loadInitialOrders() {
 }
 
 // ==========================================================================
-// RENDERIZADO DE COMANDAS
+// RENDERIZADO DE COMANDAS (FÁCIL Y CLARO PARA LA MAMÁ)
 // ==========================================================================
 function renderOrders() {
   const container = document.getElementById('ordersList');
@@ -138,15 +161,21 @@ function renderOrders() {
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div class="empty-feed">
-        <div class="empty-icon">🍳</div>
-        <p>No hay pedidos en la sección <strong>${getFilterTitle(currentFilter)}</strong>.</p>
+      <div class="empty-feed" style="text-align:center; padding: 40px 20px; color:#a8a29e;">
+        <div style="font-size: 3rem; margin-bottom: 8px;">🍳</div>
+        <p style="font-size: 1.1rem; font-weight:600;">No hay pedidos en <strong>${getFilterTitle(currentFilter)}</strong>.</p>
+        <small style="color:#78716c;">Cuando entre una orden sonará el timbre de cocina.</small>
       </div>
     `;
     return;
   }
 
   container.innerHTML = filtered.map(order => {
+    const phoneClean = cleanPhone(order.customerPhone);
+    const waMessage = encodeURIComponent(
+      `¡Hola ${order.customerName}! Le avisamos de Comida Rápida Stefy que su Pedido #${order.number || ''} ya está LISTO para retirar en Estanislao Oyarzú 375, Canela Baja. ¡Le esperamos calentito!`
+    );
+
     return `
       <div class="order-card status-${order.status}" id="card-${order.id}">
         
@@ -156,43 +185,53 @@ function renderOrders() {
             <span class="order-num">#${order.number || '001'}</span>
             <span class="order-time">${order.createdAtFormatted || 'Hace instantes'}</span>
           </div>
-          <span class="delivery-badge">${order.deliveryType === 'Delivery' ? '🛵 Delivery' : '🥡 Retiro'}</span>
+          <span class="delivery-badge" style="background:#22c55e20; color:#22c55e; border-color:#22c55e60;">
+            🥡 Retiro en Local
+          </span>
         </div>
 
         <!-- Cuerpo con datos del cliente y comida -->
         <div class="order-card-body">
           <div class="customer-info">
-            <div class="cust-name">👤 ${order.customerName}</div>
-            <div class="cust-addr">📍 ${order.customerAddress}</div>
-            <div class="cust-pay">💵 Pago: ${order.paymentMethod}</div>
+            <div class="cust-name">👤 Cliente: <strong>${order.customerName}</strong></div>
+            ${order.customerPhone ? `
+              <div class="cust-addr" style="margin-top:4px;">
+                📞 Teléfono: <a href="tel:${order.customerPhone}" style="color:#38bdf8; text-decoration:none; font-weight:700;">${order.customerPhone}</a>
+              </div>
+            ` : ''}
+            <div class="cust-pay">💵 Pago: <strong>${order.paymentMethod || 'Efectivo al retirar'}</strong></div>
           </div>
 
           <!-- Platos solicitados -->
           <div class="items-list">
-            ${order.items.map(item => `
-              <div class="order-item-row">
+            ${(order.items || []).map(item => `
+              <div class="order-item-row" style="padding: 6px 0; border-bottom: 1px dotted #332d20;">
                 <div>
-                  <div class="order-item-title">${item.qty}x ${item.name}</div>
-                  <div class="order-item-specs">
-                    ${item.cookingPoint ? `• Punto: ${item.cookingPoint}` : ''}
-                    ${item.extras && item.extras.length > 0 ? ` • Extras: ${item.extras.join(', ')}` : ''}
-                    ${item.notes ? ` • <em>"${item.notes}"</em>` : ''}
+                  <div class="order-item-title" style="font-size:1.05rem; font-weight:700; color:#fff;">
+                    • ${item.qty}x ${item.name}
                   </div>
+                  ${item.notes ? `
+                    <div style="background:#3b2d18; color:#fde047; padding:3px 8px; border-radius:4px; font-size:0.82rem; font-weight:700; margin-top:4px;">
+                      ⚠️ Nota del cliente: "${item.notes}"
+                    </div>
+                  ` : ''}
                 </div>
-                <div class="order-item-price">${formatMoney(item.unitPrice * item.qty)}</div>
+                <div class="order-item-price" style="font-size:1rem; font-weight:700;">
+                  ${formatMoney(item.unitPrice * item.qty)}
+                </div>
               </div>
             `).join('')}
           </div>
 
           <!-- Total a cobrar -->
           <div class="order-total-bar">
-            <span>Total a Cobrar:</span>
+            <span>Total a Cobrar al Retirar:</span>
             <span class="order-total-amount">${formatMoney(order.total)}</span>
           </div>
 
-          <!-- Botones de Acción de Cocina -->
+          <!-- Botones de Acción para la Mamá -->
           <div class="order-actions">
-            ${renderActionButtons(order)}
+            ${renderActionButtons(order, phoneClean, waMessage)}
           </div>
         </div>
       </div>
@@ -200,11 +239,11 @@ function renderOrders() {
   }).join('');
 }
 
-function renderActionButtons(order) {
+function renderActionButtons(order, phoneClean, waMessage) {
   if (order.status === 'NUEVO') {
     return `
       <button class="btn-action-main btn-kitchen" onclick="changeStatus('${order.id}', 'PREPARANDO')">
-        🍳 Aceptar y Pasar a Cocina
+        🍳 EMPEZAR A PREPARAR (Pasar a Cocina)
       </button>
       <button class="btn-cancel" onclick="changeStatus('${order.id}', 'ENTREGADO')">
         Marcar como cerrado
@@ -214,19 +253,26 @@ function renderActionButtons(order) {
   if (order.status === 'PREPARANDO') {
     return `
       <button class="btn-action-main btn-ready" onclick="changeStatus('${order.id}', 'LISTO')">
-        🛵 Listo para Enviar / Entregar
+        ✅ ¡ESTÁ LISTO! (Avisar para Retiro)
       </button>
     `;
   }
   if (order.status === 'LISTO') {
     return `
+      ${phoneClean ? `
+        <a class="btn-action-main btn-wa" href="https://wa.me/${phoneClean}?text=${waMessage}" target="_blank" rel="noopener" style="background:#25D366; color:#fff; text-decoration:none; margin-bottom:6px;">
+          💬 Avisar por WhatsApp al cliente que está listo
+        </a>
+      ` : ''}
       <button class="btn-action-main btn-deliver" onclick="changeStatus('${order.id}', 'ENTREGADO')">
-        ✅ Pedido Entregado al Cliente
+        📦 ENTREGADO Y COBRADO (Cerrar)
       </button>
     `;
   }
   return `
-    <span style="font-size:0.8rem; color:#86efac; text-align:center; padding: 4px;">✓ Pedido completado</span>
+    <div style="font-size:0.95rem; color:#86efac; text-align:center; padding: 8px; font-weight:700; background:#142918; border-radius:4px;">
+      ✓ Pedido entregado y cobrado
+    </div>
   `;
 }
 
@@ -234,7 +280,7 @@ function getFilterTitle(status) {
   switch (status) {
     case 'NUEVO': return 'Nuevos';
     case 'PREPARANDO': return 'En Cocina';
-    case 'LISTO': return 'Listos para Reparto';
+    case 'LISTO': return 'Listos para Retiro';
     case 'ENTREGADO': return 'Entregados';
     default: return '';
   }
@@ -250,7 +296,9 @@ function updateBadges() {
   };
 
   allOrders.forEach(o => {
-    if (counts[o.status] !== undefined) counts[o.status]++;
+    if (counts[o.status] !== undefined) {
+      counts[o.status]++;
+    }
   });
 
   document.getElementById('badgeNuevos').textContent = counts.NUEVO;
@@ -281,20 +329,21 @@ async function changeStatus(orderId, newStatus) {
 }
 
 // ==========================================================================
-// SIMULACIÓN DE PRUEBA
+// SIMULACIÓN DE PRUEBA RÁPIDA
 // ==========================================================================
 async function sendTestOrder() {
   initAudio();
   const testData = {
-    customerName: 'Prueba desde el Celular',
-    customerAddress: 'Mesa 4 / Calle Falsa 123',
-    deliveryType: 'Delivery',
-    paymentMethod: 'Efectivo',
+    customerName: 'Cliente de Prueba (Canela Baja)',
+    customerPhone: '+56 9 5988 7847',
+    customerAddress: 'Estanislao Oyarzú 375, Canela Baja',
+    deliveryType: 'Retiro en Local',
+    paymentMethod: 'Efectivo al retirar',
     items: [
-      { name: 'Doble Bacon & Queso Fundido', qty: 2, unitPrice: 8.50, cookingPoint: 'Jugosa', extras: ['Queso Cheddar Extra'] },
-      { name: 'Papas Rústicas con Cheddar', qty: 1, unitPrice: 4.80 }
+      { name: 'Ass italiano', qty: 1, unitPrice: 4600 },
+      { name: 'Completo italiano', qty: 2, unitPrice: 2800, notes: 'Sin mostaza' }
     ],
-    total: 21.80
+    total: 10200
   };
 
   try {
@@ -309,13 +358,12 @@ async function sendTestOrder() {
 }
 
 // ==========================================================================
-// EVENTOS Y NAVEGACIÓN
+// INICIALIZACIÓN
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
-  loadInitialOrders();
   startRealtimeConnection();
 
-  // Cambio de pestañas
+  // Control de pestañas
   const tabButtons = document.querySelectorAll('.tab-btn');
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -332,10 +380,10 @@ document.addEventListener('DOMContentLoaded', () => {
     playKitchenChime();
   });
 
-  // Botón simular orden
+  // Botón simular orden de prueba
   document.getElementById('simOrderBtn').addEventListener('click', sendTestOrder);
 
-  // Desbloquear audio al primer toque en la pantalla
+  // Desbloqueo de audio al primer toque
   document.body.addEventListener('touchstart', initAudio, { once: true });
   document.body.addEventListener('click', initAudio, { once: true });
 });

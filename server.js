@@ -85,7 +85,7 @@ const server = http.createServer((req, res) => {
       'X-Accel-Buffering': 'no',
     });
 
-    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', message: 'Conectado a La Brasa' })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', message: 'Conectado a Comida Rápida Stefy' })}\n\n`);
 
     const clientId = Date.now();
     const newClient = { id: clientId, res };
@@ -131,10 +131,10 @@ const server = http.createServer((req, res) => {
           id: 'ORD-' + Date.now(),
           number: orderNumber,
           customerName: orderData.customerName || 'Cliente Anónimo',
-          customerAddress: orderData.customerAddress || 'Retiro en Local',
+          customerAddress: orderData.customerAddress || 'Estanislao Oyarzú 375, Canela Baja',
           customerPhone: orderData.customerPhone || '',
-          deliveryType: orderData.deliveryType || 'Delivery',
-          paymentMethod: orderData.paymentMethod || 'Efectivo',
+          deliveryType: orderData.deliveryType || 'Retiro en Local',
+          paymentMethod: orderData.paymentMethod || 'Efectivo al retirar',
           items: orderData.items || [],
           total: orderData.total || 0,
           status: 'NUEVO', // NUEVO -> PREPARANDO -> LISTO -> ENTREGADO
@@ -213,8 +213,8 @@ const server = http.createServer((req, res) => {
     '.apk': 'application/vnd.android.package-archive'
   };
 
-  if (pathname === '/descargar-app' || pathname === '/descargar') {
-    filePath = '/LaBrasa_Cocina.apk';
+  if (pathname === '/descargar-app' || pathname === '/descargar' || pathname === '/app') {
+    filePath = '/Stefy_Cocina.apk';
   }
 
   fs.readFile(safePath, (err, content) => {

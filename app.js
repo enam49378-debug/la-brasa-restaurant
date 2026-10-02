@@ -1,5 +1,5 @@
-// Carta de La Brasa. Los precios se expresan en pesos chilenos.
-const WHATSAPP_PHONE = "";
+// Carta de Comida Rápida Stefy - Canela Baja, Coquimbo. Precios en pesos chilenos.
+const WHATSAPP_PHONE = "56959887847";
 
 const CATEGORIES = [
   { id: "ass", name: "Ass" },
@@ -305,18 +305,12 @@ function sendOrderToKitchen() {
     return;
   }
   const name = byId("custName").value.trim();
-  const address = byId("custAddress").value.trim();
-  const delivery = document.querySelector('input[name="delivery_type"]:checked').value;
+  const phone = byId("custPhone") ? byId("custPhone").value.trim() : "";
   const payMethod = byId("custPay").value;
 
   if (!name) {
-    alert("Por favor escribí tu nombre para identificar tu pedido.");
+    alert("Por favor escribí tu nombre para saber quién retira el pedido.");
     byId("custName").focus();
-    return;
-  }
-  if (delivery === "Delivery" && !address) {
-    alert("Por favor escribí la dirección donde entregaremos tu pedido.");
-    byId("custAddress").focus();
     return;
   }
 
@@ -329,8 +323,9 @@ function sendOrderToKitchen() {
 
   const orderPayload = {
     customerName: name,
-    customerAddress: delivery === "Delivery" ? address : "Retiro en el local",
-    deliveryType: delivery,
+    customerPhone: phone,
+    customerAddress: "Estanislao Oyarzú 375, Canela Baja",
+    deliveryType: "Retiro en Local",
     paymentMethod: payMethod,
     items: State.cart.map(item => ({
       name: item.name + (item.variant ? " (" + item.variant + ")" : ""),
@@ -356,17 +351,17 @@ function sendOrderToKitchen() {
       updateCartUI();
       closeCart();
       byId("custName").value = "";
-      byId("custAddress").value = "";
+      if (byId("custPhone")) byId("custPhone").value = "";
       showOrderSuccess(order, orderPayload);
     })
     .catch(err => {
       console.error("Error al enviar pedido:", err);
-      alert("Hubo un inconveniente al enviar tu pedido. Por favor intenta nuevamente.");
+      alert("Hubo un inconveniente al enviar tu pedido. Por favor intenta nuevamente o llámanos al +56 9 5988 7847.");
     })
     .finally(() => {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = originalHtml || '<span>Confirmar y Enviar Pedido</span> <span class="arrow" aria-hidden="true">➔</span>';
+        btn.innerHTML = originalHtml || '<span>Confirmar Pedido para Retiro</span> <span class="arrow" aria-hidden="true">➔</span>';
       }
     });
 }
@@ -390,13 +385,19 @@ function showOrderSuccess(order, payload) {
   byId("successOrderDetails").innerHTML =
     '<div style="margin-bottom:8px; border-bottom:1px solid #ebd9c8; padding-bottom:6px;">' +
       '<div><strong>Cliente:</strong> ' + escapeHtml(payload.customerName) + '</div>' +
-      '<div><strong>Entrega:</strong> ' + (payload.deliveryType === 'Delivery' ? '🛵 ' + escapeHtml(payload.customerAddress) : '🥡 Retiro en el local') + '</div>' +
-      '<div><strong>Pago:</strong> ' + escapeHtml(payload.paymentMethod) + '</div>' +
+      '<div><strong>Retiro en:</strong> 📍 Estanislao Oyarzú 375, Canela Baja</div>' +
+      '<div><strong>Pago al retirar:</strong> ' + escapeHtml(payload.paymentMethod) + '</div>' +
     '</div>' +
     '<div style="margin-bottom:8px;">' + itemsHtml + '</div>' +
     '<div style="border-top:1px solid #ebd9c8; padding-top:6px; display:flex; justify-content:space-between; font-weight:700; color:var(--rust-dark); font-size:1.05rem;">' +
       '<span>Total a pagar:</span><span>' + money(payload.total) + '</span>' +
     '</div>';
+
+  const waBtn = byId("successWaBtn");
+  if (waBtn) {
+    const waText = encodeURIComponent("Hola Comida Rápida Stefy! Acabo de hacer el Pedido #" + (order.number || "") + " a nombre de " + payload.customerName + ". ¿Cuánto demora aprox para pasar a retirar? ¡Muchas gracias!");
+    waBtn.href = "https://wa.me/" + WHATSAPP_PHONE + "?text=" + waText;
+  }
 
   modal.style.display = "flex";
   byId("overlay").classList.add("active");
@@ -408,12 +409,6 @@ function closeSuccessModal() {
   if (modal) modal.style.display = "none";
   byId("overlay").classList.remove("active");
   document.body.style.overflow = "";
-}
-
-function syncDelivery() {
-  const isDelivery = document.querySelector('input[name="delivery_type"]:checked').value === "Delivery";
-  byId("custAddress").style.display = isDelivery ? "" : "none";
-  byId("custAddress").required = isDelivery;
 }
 
 function setupEvents() {
@@ -460,7 +455,6 @@ function setupEvents() {
     const button = event.target.closest("[data-cart-id]");
     if (button) changeQty(button.dataset.cartId, Number(button.dataset.delta));
   });
-  document.querySelectorAll('input[name="delivery_type"]').forEach(radio => radio.addEventListener("change", syncDelivery));
 
   const orderBtn = byId("sendOrderBtn") || byId("sendWhatsappBtn");
   if (orderBtn) orderBtn.addEventListener("click", sendOrderToKitchen);
@@ -478,5 +472,4 @@ document.addEventListener("DOMContentLoaded", () => {
   renderMenu();
   setupEvents();
   updateCartUI();
-  syncDelivery();
 });
